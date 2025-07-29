@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Prompt Engineering - Copilot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .typing-animation {
+            border-right: 2px solid #0078d4;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { border-color: #0078d4; }
+            51%, 100% { border-color: transparent; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tip-overlay {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+        
+        .copilot-gradient {
+            background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+        }
+        
+        .message-bubble {
+            max-width: 90%;
+            word-wrap: break-word;
+            font-size: 0.875rem;
+        }
+        
+        .user-message {
+            background: #f3f2f1;
+            border: 1px solid #e1dfdd;
+        }
+        
+        .ai-message {
+            background: #ffffff;
+            border: 1px solid #e1dfdd;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Contenedor principal adaptado para formato cuadrado -->
+    <div class="w-full h-screen bg-white overflow-hidden" style="aspect-ratio: 1/1; max-height: 100vh;">
+        
+        <!-- Portada inicial -->
+        <div id="coverPage" class="h-full flex flex-col justify-center items-center text-center p-6 copilot-gradient text-white relative">
+            <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+            <div class="relative z-10 max-w-lg w-full">
+                <div class="mb-4">
+                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                        <svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-2xl font-bold mb-3 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                        Simulador de Prompt Engineering
+                    </h1>
+                    <p class="text-base opacity-90 mb-4">
+                        Aprende a crear prompts más efectivos con Microsoft Copilot
+                    </p>
+                </div>
+                
+                <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4 mb-4">
+                    <h2 class="text-lg font-semibold mb-3">🎯 Lo que aprenderás:</h2>
+                    <div class="grid grid-cols-1 gap-2 text-left text-xs">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm">💡</span>
+                            <span>Técnica de Especificidad</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm">🎭</span>
+                            <span>Asignación de Roles</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm">📋</span>
+                            <span>Especificación de Formato</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm">✅</span>
+                            <span>Restricciones Positivas y Negativas</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm">📚</span>
+                            <span>Uso de Ejemplos</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm">🔄</span>
+                            <span>Corrección y Retroalimentación</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm">❓</span>
+                            <span>Solicitar Información Adicional</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm">🎯</span>
+                            <span>Iteración y Refinamiento</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="startBtn" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-bold text-lg shadow-lg hover:bg-blue-50 transition-all transform hover:scale-105">
+                    🚀 Comenzar Simulación
+                </button>
+            </div>
+        </div>
+
+        <!-- Interfaz del simulador (inicialmente oculta) -->
+        <div id="simulatorInterface" class="hidden h-full">
+            <!-- Header de Copilot -->
+            <div class="copilot-gradient text-white p-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-semibold">Microsoft Copilot</h1>
+                        <p class="text-xs opacity-90">Tu asistente de IA</p>
+                    </div>
+                </div>
+                <div class="text-xs opacity-90">Simulador</div>
+            </div>
+
+            <!-- Área de chat -->
+            <div class="flex-1 flex flex-col h-full">
+                <div id="chatArea" class="flex-1 p-4 overflow-y-auto space-y-3" style="height: calc(100% - 120px);">
+                    <!-- Los mensajes aparecerán aquí -->
+                </div>
+
+                <!-- Área de controles -->
+                <div class="border-t bg-white p-4 shadow-lg">
+                    <div class="text-center mb-3">
+                        <button id="nextBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold text-sm shadow-lg transition-all transform hover:scale-105">
+                            Comenzar con el primer prompt
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-gray-600">
+                        <div>
+                            Paso <span id="stepCounter">1</span> de 20
+                        </div>
+                        <div>
+                            <span id="progressText">Listo para empezar</span>
+                        </div>
+                    </div>
+                    <div class="mt-2 bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay para consejos -->
+    <div id="tipOverlay" class="fixed inset-0 tip-overlay hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-md mx-4 shadow-2xl">
+            <div class="flex items-center mb-4">
+                <div id="tipIcon" class="w-12 h-12 rounded-full flex items-center justify-center mr-4">
+                    <!-- Icono se insertará dinámicamente -->
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800">Consejo de Prompt Engineering</h3>
+            </div>
+            <p id="tipText" class="text-gray-600 mb-6 leading-relaxed"></p>
+            <button id="tipContinue" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors">
+                Continuar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        class PromptEngineeringSimulator {
+            constructor() {
+                this.currentStep = 0;
+                this.chatArea = document.getElementById('chatArea');
+                this.nextBtn = document.getElementById('nextBtn');
+                this.stepCounter = document.getElementById('stepCounter');
+                this.progressBar = document.getElementById('progressBar');
+                this.progressText = document.getElementById('progressText');
+                this.tipOverlay = document.getElementById('tipOverlay');
+                this.tipIcon = document.getElementById('tipIcon');
+                this.tipText = document.getElementById('tipText');
+                this.tipContinue = document.getElementById('tipContinue');
+                this.coverPage = document.getElementById('coverPage');
+                this.simulatorInterface = document.getElementById('simulatorInterface');
+                this.startBtn = document.getElementById('startBtn');
+                
+                this.steps = [
+                    {
+                        type: 'user',
+                        message: 'Escribe un correo de presentación para un cliente',
+                        buttonText: 'Ver respuesta de Copilot'
+                    },
+                    {
+                        type: 'ai',
+                        message: 'Estimado cliente,\n\nEspero que este correo le encuentre bien. Me pongo en contacto con usted para presentar nuestros servicios.\n\nNuestra empresa ofrece soluciones de calidad y estamos comprometidos con la excelencia.\n\nQuedo a su disposición para cualquier consulta.\n\nSaludos cordiales,\n[Su nombre]',
+                        buttonText: '💡 Ver técnica'
+                    },
+                    {
+                        type: 'tip',
+                        tip: {
+                            title: 'Técnica 1: Especificidad',
+                            icon: '💡',
+                            iconBg: 'bg-yellow-100',
+                            text: 'Indicaciones genéricas producen resultados genéricos. Sé específico en tus prompts para obtener mejores resultados.'
+                        },
+                        buttonText: 'Ver prompt mejorado'
+                    },
+                    {
+                        type: 'user',
+                        message: 'Escribe un correo de presentación profesional para un cliente potencial del sector tecnológico. El correo debe ser de 150 palabras, tono formal pero cercano, destacando nuestros servicios de desarrollo de software.',
+                        buttonText: 'Ver respuesta mejorada'
+                    },
+                    {
+                        type: 'ai',
+                        message: 'Estimado/a [Nombre del cliente],\n\nEspero que se encuentre bien. Me dirijo a usted desde [Nombre de la empresa] para presentar nuestros servicios especializados en desarrollo de software.\n\nCon más de [X años] de experiencia en el sector tecnológico, hemos ayudado a empresas como la suya a digitalizar sus procesos y optimizar su rendimiento mediante soluciones personalizadas. Nuestro equipo de desarrolladores expertos se especializa en aplicaciones web, móviles y sistemas de gestión empresarial.\n\nEntendemos los desafíos únicos que enfrenta el sector tecnológico y nos adaptamos a las necesidades específicas de cada proyecto, garantizando entregas puntuales y soporte continuo.\n\nMe encantaría programar una breve reunión para conocer más sobre sus objetivos y explorar cómo podemos contribuir al crecimiento de su empresa.\n\nQuedo a su disposición.\n\nCordialmente,\n[Su nombre]',
+                        buttonText: '🎭 Ver técnica'
+                    },
+                    {
+                        type: 'tip',
+                        tip: {
+                            title: 'Técnica 2: Asignación de Roles',
+                            icon: '🎭',
+                            iconBg: 'bg-purple-100',
+                            text: 'Pedirle a la IA que adopte un rol específico es una forma sencilla de empezar a generar mejores prompts. "Actúa como si fueras..."'
+                        },
+                        buttonText: 'Ver prompt mejorado'
+                    },
+                    {
+                        type: 'user',
+                        message: 'Actúa como un experto en marketing B2B. Escribe un correo de presentación profesional para un cliente potencial del sector tecnológico. El correo debe ser de 150 palabras, tono formal pero cercano, destacando nuestros servicios de desarrollo de software y incluyendo una llamada a la acción clara.',
+                        buttonText: 'Ver respuesta con rol específico'
+                    },
+                    {
+                        type: 'ai',
+                        message: 'Asunto: Impulse su transformación digital con soluciones de software personalizadas\n\nEstimado/a [Nombre],\n\nComo experto en marketing B2B, entiendo que las empresas tecnológicas necesitan socios que comprendan sus desafíos únicos.\n\nEn [Empresa], no solo desarrollamos software; creamos ventajas competitivas. Nuestras soluciones han ayudado a empresas del sector tech a:\n• Reducir tiempos de desarrollo en un 40%\n• Mejorar la experiencia del usuario\n• Escalar operaciones eficientemente\n\nNuestro enfoque consultivo nos permite entender primero sus objetivos de negocio antes de proponer soluciones técnicas.\n\n¿Le interesaría conocer cómo hemos ayudado a empresas similares a la suya? Podríamos agendar una llamada de 15 minutos esta semana para explorar oportunidades específicas para [Nombre de la empresa].\n\nResponda a este correo o llámeme al [teléfono] para coordinar.\n\nSaludos,\n[Nombre]\nEspecialista en Soluciones Tecnológicas',
+                        buttonText: '📋 Ver técnica'
+                    },
+                    {
+                        type: 'tip',
+                        tip: {
+                            title: 'Técnica 3: Especificación de Formato',
+                            icon: '📋',
+                            iconBg: 'bg-green-100',
+                            text: 'La IA puede generar diversos tipos de texto. Indícale cómo quieres que presente el resultado: en viñetas, tablas, párrafos, etc.'
+                        },
+                        buttonText: 'Ver prompt mejorado'
+                    },
+                    {
+                        type: 'user',
+                        message: 'Actúa como un experto en marketing B2B. Basándote en información del sitio web de Microsoft sobre mejores prácticas en comunicación empresarial, escribe un correo de presentación. Presenta los 3 puntos principales en viñetas y incluye métricas específicas.',
+                        buttonText: 'Ver respuesta estructurada'
+                    },
+                    {
+                        type: 'ai',
+                        message: 'Asunto: Transforme su negocio con desarrollo de software estratégico\n\nEstimado/a [Nombre],\n\nBasándome en las mejores prácticas de comunicación empresarial, me dirijo a usted para presentar cómo podemos impulsar el crecimiento de [Empresa].\n\n**Nuestros 3 pilares de valor:**\n\n• **Eficiencia Operativa**: Automatizamos procesos que reducen costos operativos hasta un 35% y mejoran la productividad del equipo\n\n• **Escalabilidad Inteligente**: Desarrollamos arquitecturas que soportan crecimiento del 200-500% sin comprometer el rendimiento\n\n• **ROI Comprobado**: Nuestros clientes ven retorno de inversión promedio del 180% en los primeros 12 meses\n\n**Métricas de nuestros últimos proyectos:**\n- 98% de satisfacción del cliente\n- Entrega puntual en el 95% de los casos\n- Reducción promedio del 40% en tiempo de procesamiento\n\n¿Podríamos agendar 20 minutos esta semana para discutir sus objetivos específicos?\n\nSaludos cordiales,\n[Nombre]',
+                        buttonText: '✅ Ver técnica'
+                    },
+                    {
+                        type: 'tip',
+                        tip: {
+                            title: 'Técnica 4: Restricciones Positivas y Negativas',
+                            icon: '✅',
+                            iconBg: 'bg-red-100',
+                            text: 'Indica a la IA qué quieres y qué NO quieres en tu respuesta. Esto puede ahorrarte mucho tiempo y mejorar los resultados.'
+                        },
+                        buttonText: 'Ver prompt mejorado'
+                    },
+                    {
+                        type: 'user',
+                        message: 'Actúa como un experto en marketing B2B. Escribe un correo de presentación profesional. Incluye métricas específicas y presenta 3 puntos principales en viñetas. NO uses jerga técnica compleja, NO hagas el correo muy largo (máximo 200 palabras), y NO incluyas precios o cotizaciones.',
+                        buttonText: 'Ver respuesta optimizada'
+                    },
+                    {
+                        type: 'ai',
+                        message: 'Asunto: Acelere su crecimiento con soluciones de software probadas\n\nHola [Nombre],\n\nSoy [Tu nombre] y ayudo a empresas tecnológicas a crecer más rápido con software personalizado.\n\n**Por qué nuestros clientes nos eligen:**\n\n• **Resultados rápidos**: Entregamos soluciones funcionales en 6-8 semanas promedio\n• **Crecimiento real**: Nuestros clientes aumentan su eficiencia operativa en 45% el primer año\n• **Soporte confiable**: 99.5% de disponibilidad y respuesta en menos de 2 horas\n\nRecién ayudamos a una startup fintech a procesar 10x más transacciones sin aumentar su equipo técnico.\n\n**¿Le interesa saber cómo?**\n\nPodríamos conversar 15 minutos sobre sus desafíos actuales. Sin compromisos, solo una charla entre profesionales.\n\n¿Qué tal el jueves a las 3 PM?\n\nSaludos,\n[Tu nombre]\nP.D.: Si prefiere, puede responder con un horario que le convenga mejor.',
+                        buttonText: '📚 Ver técnica'
+                    },
+                    {
+                        type: 'tip',
+                        tip: {
+                            title: 'Técnica 5: Uso de Ejemplos',
+                            icon: '📚',
+                            iconBg: 'bg-blue-100',
+                            text: 'Usa uno o varios ejemplos para darle a la IA un punto de referencia que mejore sus resultados. Los ejemplos son muy poderosos.'
+                        },
+                        buttonText: 'Ver prompt mejorado'
+                    },
+                    {
+                        type: 'user',
+                        message: 'Actúa como un experto en marketing B2B. Escribe un correo como este ejemplo exitoso: "Hola [Nombre], vi que [empresa] está expandiéndose. Ayudamos a empresas similares a escalar sin problemas técnicos. ¿Conversamos 10 minutos?" Adapta este estilo: directo, personal, con valor claro. NO uses jerga técnica, máximo 150 palabras.',
+                        buttonText: 'Ver resultado final'
+                    },
+                    {
+                        type: 'ai',
+                        message: 'Asunto: ¿Cómo está manejando [Empresa] el crecimiento actual?\n\nHola [Nombre],\n\nVi que [Empresa] está en una fase de expansión interesante. Felicitaciones.\n\nAyudo a empresas tech como la suya a crecer sin que la tecnología se convierta en un cuello de botella.\n\nPor ejemplo, el mes pasado una empresa similar duplicó su capacidad de procesamiento en 3 semanas, sin contratar más desarrolladores.\n\n**¿Su equipo está sintiendo la presión del crecimiento?**\n\nSi es así, podríamos conversar 10 minutos sobre cómo mantener el ritmo sin comprometer la calidad.\n\nSin presentaciones largas ni propuestas complicadas. Solo una charla práctica entre profesionales.\n\n¿Le parece bien el miércoles a las 2 PM?\n\nSaludos,\n[Tu nombre]\n\nP.D.: Si no es buen momento, solo responda "no gracias" y no volveré a contactarlo.',
+                        buttonText: '🔄 Ver técnica'
+                    },
+                    {
+                        type: 'tip',
+                        tip: {
+                            title: 'Técnica 6: Corrección y Retroalimentación',
+                            icon: '🔄',
+                            iconBg: 'bg-orange-100',
+                            text: 'Chatea con la IA como si fuera un colega. Indícale qué partes fueron útiles y cuáles podrían mejorarse. Si algo salió mal, díselo para que corrija ese error particular.'
+                        },
+                        buttonText: 'Ver prompt con retroalimentación'
+                    },
+                    {
+                        type: 'user',
+                        message: 'El correo anterior está bien, pero el tono es demasiado informal para mi industria. Necesito que sea más profesional manteniendo la cercanía. También, el P.D. suena un poco brusco. ¿Podrías ajustar esas dos cosas?',
+                        buttonText: 'Ver corrección aplicada'
+                    },
+                    {
+                        type: 'ai',
+                        message: 'Asunto: Oportunidad de colaboración para el crecimiento de [Empresa]\n\nEstimado/a [Nombre],\n\nHe observado el crecimiento impresionante que está experimentando [Empresa] y me gustaría felicitarle por estos logros.\n\nEn mi experiencia trabajando con empresas tecnológicas en expansión, he visto cómo el crecimiento acelerado puede generar desafíos técnicos inesperados.\n\nRecientemente, colaboré con una empresa en situación similar que logró duplicar su capacidad de procesamiento en 3 semanas, optimizando su infraestructura existente sin necesidad de ampliar el equipo de desarrollo.\n\n**¿Está su equipo técnico preparado para sostener este ritmo de crecimiento?**\n\nSi considera que podría ser útil una conversación al respecto, estaría encantado de compartir algunas estrategias que han funcionado bien en casos similares.\n\nPodríamos coordinar una breve llamada de 15 minutos esta semana, sin ningún compromiso.\n\n¿Le resultaría conveniente el miércoles a las 2 PM?\n\nQuedo a su disposición.\n\nCordialmente,\n[Tu nombre]',
+                        buttonText: '❓ Ver técnica'
+                    },
+                    {
+                        type: 'tip',
+                        tip: {
+                            title: 'Técnica 7: Solicitar Información Adicional',
+                            icon: '❓',
+                            iconBg: 'bg-cyan-100',
+                            text: 'Pide a la IA que te pregunte qué requiere para completar la tarea. Esto te ayudará a obtener resultados más precisos y personalizados.'
+                        },
+                        buttonText: 'Ver prompt solicitando información'
+                    },
+                    {
+                        type: 'user',
+                        message: 'Necesito escribir un correo de seguimiento para un cliente que no respondió a mi propuesta inicial. Antes de escribirlo, pregúntame todo lo que necesitas saber para crear el mejor correo posible.',
+                        buttonText: 'Ver preguntas de la IA'
+                    },
+                    {
+                        type: 'ai',
+                        message: 'Perfecto, me gustaría conocer algunos detalles para crear un correo de seguimiento efectivo:\n\n**Sobre el contexto:**\n• ¿Cuánto tiempo ha pasado desde tu propuesta inicial?\n• ¿Qué tipo de servicio o producto propusiste?\n• ¿Hubo alguna interacción previa (reunión, llamada, etc.)?\n\n**Sobre el cliente:**\n• ¿Cuál es su industria o sector?\n• ¿Conoces el motivo por el cual podría no haber respondido?\n• ¿Qué nivel jerárquico tiene la persona (CEO, gerente, etc.)?\n\n**Sobre el enfoque:**\n• ¿Prefieres un tono más directo o más sutil?\n• ¿Hay alguna urgencia o fecha límite?\n• ¿Quieres ofrecer algo adicional (descuento, consulta gratuita, etc.)?\n\n**Sobre el objetivo:**\n• ¿Buscas una respuesta, agendar una reunión, o cerrar la venta?\n\nCon esta información podré crear un correo de seguimiento mucho más efectivo y personalizado.',
+                        buttonText: '🎯 Ver técnica'
+                    },
+                    {
+                        type: 'tip',
+                        tip: {
+                            title: 'Técnica 8: Iteración y Refinamiento',
+                            icon: '🎯',
+                            iconBg: 'bg-pink-100',
+                            text: 'Combina todas las técnicas anteriores en un proceso iterativo. Usa retroalimentación, solicita información, aplica ejemplos y refina hasta obtener el resultado perfecto.'
+                        },
+                        buttonText: 'Ver proceso completo'
+                    },
+                    {
+                        type: 'user',
+                        message: 'Han pasado 2 semanas, propuse servicios de desarrollo web, tuvimos una reunión inicial positiva. Es una empresa de retail, el contacto es el Director de IT. Prefiero tono profesional pero cercano, no hay urgencia específica, busco agendar una segunda reunión. Ahora escribe el correo aplicando todas las técnicas que hemos visto.',
+                        buttonText: 'Ver resultado final optimizado'
+                    },
+                    {
+                        type: 'ai',
+                        message: 'Asunto: Seguimiento a nuestra conversación sobre desarrollo web - [Empresa]\n\nEstimado [Nombre del Director],\n\nEspero que se encuentre bien. Han pasado un par de semanas desde nuestra productiva reunión sobre las necesidades de desarrollo web de [Empresa].\n\nRecuerdo que mencionó la importancia de mejorar la experiencia de compra online y optimizar el rendimiento del sitio actual. Estos puntos resonaron mucho conmigo, especialmente considerando los desafíos únicos que enfrenta el sector retail.\n\n**Desde nuestra conversación, he estado reflexionando sobre:**\n\n• La integración con su sistema de inventario actual\n• Las oportunidades de personalización que discutimos\n• El cronograma que mejor se adapte a su temporada alta\n\nTambién preparé algunos casos de estudio específicos del sector retail que creo podrían interesarle, incluyendo una empresa similar que aumentó sus conversiones en 35% tras la optimización.\n\n¿Le parecería útil que nos reuniéramos nuevamente para profundizar en estos temas? Podría ser una conversación de 30 minutos donde también puedo mostrarle algunos mockups iniciales basados en lo que discutimos.\n\n¿Qué tal la próxima semana? Tengo disponibilidad el martes y jueves por la tarde.\n\nQuedo atento a sus comentarios.\n\nSaludos cordiales,\n[Tu nombre]\n\nP.D.: Si necesita más tiempo para evaluar internamente, no hay problema. Solo hágamelo saber y podemos coordinar para más adelante.',
+                        buttonText: 'Completar simulación',
+                        final: true
+                    }
+                ];
+                
+                this.init();
+            }
+            
+            init() {
+                this.startBtn.addEventListener('click', () => this.startSimulation());
+                this.nextBtn.addEventListener('click', () => this.nextStep());
+                this.tipContinue.addEventListener('click', () => this.hideTip());
+                this.updateProgress();
+            }
+            
+            startSimulation() {
+                this.coverPage.classList.add('hidden');
+                this.simulatorInterface.classList.remove('hidden');
+            }
+            
+            nextStep() {
+                if (this.currentStep < this.steps.length) {
+                    const step = this.steps[this.currentStep];
+                    
+                    if (step.type === 'tip') {
+                        this.showTip(step.tip);
+                    } else {
+                        this.addMessage(step.type, step.message);
+                        
+                        if (step.final) {
+                            this.completeSimulation();
+                        } else {
+                            this.updateButton();
+                        }
+                    }
+                    
+                    this.currentStep++;
+                    this.updateProgress();
+                }
+            }
+            
+            addMessage(type, message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `fade-in flex ${type === 'user' ? 'justify-end' : 'justify-start'}`;
+                
+                const bubble = document.createElement('div');
+                bubble.className = `message-bubble p-4 rounded-lg ${type === 'user' ? 'user-message' : 'ai-message'}`;
+                
+                if (type === 'user') {
+                    bubble.innerHTML = `
+                        <div class="flex items-start space-x-2">
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-800 mb-1 text-sm">Tú</div>
+                                <div class="text-gray-700 whitespace-pre-line text-sm">${message}</div>
+                            </div>
+                            <div class="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                                U
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    bubble.innerHTML = `
+                        <div class="flex items-start space-x-2">
+                            <div class="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-800 mb-1 text-sm">Copilot</div>
+                                <div class="text-gray-700 whitespace-pre-line text-sm">${message}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                messageDiv.appendChild(bubble);
+                this.chatArea.appendChild(messageDiv);
+                this.chatArea.scrollTop = this.chatArea.scrollHeight;
+            }
+            
+            showTip(tip) {
+                this.tipIcon.innerHTML = `<span class="text-2xl">${tip.icon}</span>`;
+                this.tipIcon.className = `w-12 h-12 ${tip.iconBg} rounded-full flex items-center justify-center mr-4`;
+                
+                // Update the title
+                const tipTitle = document.querySelector('#tipOverlay h3');
+                tipTitle.textContent = tip.title;
+                
+                this.tipText.textContent = tip.text;
+                this.tipOverlay.classList.remove('hidden');
+                this.tipOverlay.classList.add('flex');
+            }
+            
+            hideTip() {
+                this.tipOverlay.classList.add('hidden');
+                this.tipOverlay.classList.remove('flex');
+                this.updateButton();
+            }
+            
+            updateButton() {
+                if (this.currentStep < this.steps.length) {
+                    this.nextBtn.textContent = this.steps[this.currentStep].buttonText;
+                }
+            }
+            
+            updateProgress() {
+                const progress = (this.currentStep / this.steps.length) * 100;
+                this.progressBar.style.width = `${progress}%`;
+                this.stepCounter.textContent = Math.min(this.currentStep + 1, this.steps.length);
+                
+                if (this.currentStep === 0) {
+                    this.progressText.textContent = 'Listo para empezar';
+                } else if (this.currentStep < this.steps.length) {
+                    this.progressText.textContent = 'En progreso...';
+                } else {
+                    this.progressText.textContent = '¡Completado!';
+                }
+            }
+            
+            completeSimulation() {
+                this.nextBtn.textContent = '🔄 Reiniciar Simulación';
+                this.nextBtn.disabled = false;
+                this.nextBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg shadow-lg transition-all transform hover:scale-105';
+                this.nextBtn.onclick = () => this.restartSimulation();
+                this.progressText.textContent = '¡Excelente trabajo!';
+                
+                // Mostrar mensaje final
+                setTimeout(() => {
+                    const finalMessage = document.createElement('div');
+                    finalMessage.className = 'fade-in bg-green-50 border border-green-200 rounded-lg p-4 text-center';
+                    finalMessage.innerHTML = `
+                        <div class="text-green-800 font-semibold mb-2">🎉 ¡Felicitaciones!</div>
+                        <div class="text-green-700 mb-4">Has completado la simulación de Prompt Engineering. Ahora conoces las técnicas clave para crear prompts más efectivos.</div>
+                        <div class="text-sm text-green-600">¿Quieres repasar las técnicas? Puedes reiniciar la simulación cuando gustes.</div>
+                    `;
+                    this.chatArea.appendChild(finalMessage);
+                    this.chatArea.scrollTop = this.chatArea.scrollHeight;
+                }, 1000);
+            }
+            
+            restartSimulation() {
+                // Resetear variables
+                this.currentStep = 0;
+                
+                // Limpiar el área de chat
+                this.chatArea.innerHTML = '';
+                
+                // Resetear el botón
+                this.nextBtn.textContent = 'Comenzar con el primer prompt';
+                this.nextBtn.onclick = () => this.nextStep();
+                
+                // Actualizar progreso
+                this.updateProgress();
+                
+                // Volver a la pantalla inicial
+                this.simulatorInterface.classList.add('hidden');
+                this.coverPage.classList.remove('hidden');
+            }
+        }
+        
+        // Inicializar la simulación cuando se carga la página
+        document.addEventListener('DOMContentLoaded', () => {
+            new PromptEngineeringSimulator();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'966e3057a37c55c3',t:'MTc1MzgwODU5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
